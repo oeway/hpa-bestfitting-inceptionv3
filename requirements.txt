@@ -1,0 +1,6 @@
+imageio
+numpy
+scikit-image
+opencv-python
+hpacellseg@https://github.com/CellProfiling/HPA-Cell-Segmentation/archive/master.zip
+onnxruntime
