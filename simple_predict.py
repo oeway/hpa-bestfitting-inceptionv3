@@ -117,7 +117,16 @@ work_dir = './data'
 device = 'cuda:2'
 threshold=0.3
 image_size = 128
-model_path = '../data/bestfitting_inceptionv3_model.onnx'
+model_path = os.path.join(work_dir, 'bestfitting-inceptionv3-single-cell.onnx')
+
+os.makedirs(work_dir, exist_ok=True)
+if not os.path.exists(model_path):
+    print('Downloading bestfitting-inceptionv3-single-cell.onnx...')
+    urllib.request.urlretrieve('https://github.com/oeway/hpa-bestfitting-inceptionv3/releases/download/v0.1.0/bestfitting-inceptionv3-single-cell.onnx', model_path)
+
+for image_id in image_ids:
+    fetch_image(work_dir, image_id)
+
 segmentator = cellsegmentator.CellSegmentator(
   NUC_MODEL,
   CELL_MODEL,
@@ -126,10 +135,6 @@ segmentator = cellsegmentator.CellSegmentator(
   padding=True,
   multi_channel_model=True,
 )
-
-os.makedirs(work_dir, exist_ok=True)
-for image_id in image_ids:
-    fetch_image(work_dir, image_id)
 
 ort_session = ort.InferenceSession(model_path)
 crops_dir = opj(work_dir, 'crops')
