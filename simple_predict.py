@@ -83,7 +83,7 @@ def fetch_image(work_dir, img_id):
             image = cv2.imread(opj(work_dir, '_.jpg'), flags=cv2.IMREAD_GRAYSCALE)
             cv2.imwrite(fpath, image)
 
-def crop_image(image_raw, mask_raw, image_id, image_size, save_dir=None):
+def crop_image(image_raw, mask_raw, image_id, image_size, save_dir=None, save_rgby=False):
   
   if (image_size > 0) & (image_raw.shape[0] != image_size):
     image_raw = cv2.resize(image_raw, (image_size, image_size))
@@ -100,7 +100,7 @@ def crop_image(image_raw, mask_raw, image_id, image_size, save_dir=None):
     image, _ = cell_crop_augment(image, (mask == maskid).astype('uint8'))
     if save_dir:
       save_fname = f'{save_dir}/{image_id}_{maskid}.png'
-      cv2.imwrite(save_fname, image[:, :, :3]) # ignore the alpha channel
+      cv2.imwrite(save_fname, image if save_rgby else image[:, :, :3]) # ignore the alpha channel
     crop_images.append(image)
   return cell_indices, crop_images
 
@@ -150,7 +150,7 @@ for image_id in image_ids:
       imageio.imwrite(f'{seg_dir}/{image_id}_cell.png', cell_mask)
       imageio.imwrite(f'{seg_dir}/{image_id}_nuclei.png', nuclei_mask)
     image_raw = load_rgby(work_dir, image_id, suffix='png')
-    cell_indices, crop_images = crop_image(image_raw, cell_mask, image_id, image_size, crops_dir)
+    cell_indices, crop_images = crop_image(image_raw, cell_mask, image_id, image_size, crops_dir, False)
     for mask_id, image in zip(cell_indices, crop_images):
         image = cv2.resize(image, (image_size, image_size))
         image = image.transpose(2, 0, 1)  # HxWxC to CxHxW
@@ -158,4 +158,4 @@ for image_id in image_ids:
         image = image[None, :, :, :]
         classes, features = ort_session.run(None, {'image': image.astype(np.float32)})
         preds = [(LABELS[i], prob) for i, prob in enumerate(classes[0].tolist()) if prob>threshold]
-        print(image_id, mask_id, preds)
+        print(image_id, mask_id, preds, features.shape)
