@@ -43,6 +43,18 @@ def export_onnx(model, device, file_path='bestfitting_inceptionv3_model2048.onnx
     assert np.allclose(original_results[0].to('cpu').numpy(), exported_results[0]), f"{original_results[0].numpy()}, {exported_results[0]}"
     print(f'ONNX File {file_path} exported successfully')
 
+    
+def export_torchscript(model, device, file_path='bestfitting_inceptionv3_model2048.pt'):
+    example = torch.rand(1, 4, 128, 128).to(device)
+    with torch.no_grad():
+        traced_cpu = torch.jit.trace(model, example)
+        torch.jit.save(traced_cpu, file_path)
+        loaded = torch.jit.load(file_path)
+        exported_results = loaded(example)
+        original_results = model(example.to(device))
+    assert np.allclose(original_results[0].to('cpu').numpy(), exported_results[0].to('cpu').numpy()), f"{original_results[0].numpy()}, {exported_results[0].numpy()}"
+
+
 model_path = '../../models/d0507_cellv4b_3labels_cls_inception_v3_cbam_i128x128_aug2_5folds/fold0/12.00_ema.pth'
 device = 'cuda:2'
 model = load_model(model_path, device)
